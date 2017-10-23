@@ -3,9 +3,13 @@
 
 #include "ResourcePath.hpp"
 
+bool windowOpen = true;
+int windowWidth = 800;
+int windowHeight = 600;
+
 void renderThread(sf::RenderWindow* window)
 {
-    while (window->isOpen())
+    while (windowOpen)
     {
         // Clear screen
         window->clear();
@@ -13,12 +17,16 @@ void renderThread(sf::RenderWindow* window)
         // Update the window
         window->display();
     }
+    
+    window->close();
 }
 
 int main(int, char const**)
 {
+    bool fullscreen = false;
+    
     // Create the main window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Annihilation");
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Annihilation");
     window.setActive(false);
     
     // Create and start render thread
@@ -41,13 +49,44 @@ int main(int, char const**)
         while (window.pollEvent(event))
         {
             // Close window: exit
-            if (event.type == sf::Event::Closed) {
-                window.close();
+            if (event.type == sf::Event::Closed)
+            {
+                windowOpen = false;
+                thread.wait();
             }
 
             // Escape pressed: exit
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                window.close();
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+            {
+                windowOpen = false;
+                thread.wait();
+            }
+            
+            // Fullscreen check
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F)
+            {
+                windowOpen = false;
+                thread.wait();
+                
+                if (fullscreen)
+                {
+                    window.create(sf::VideoMode(windowWidth, windowHeight), "Annihilation");
+                    fullscreen = false;
+                }
+                else
+                {
+                    sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
+                    int resX, resY;
+                    
+                    resX = desktopMode.width;
+                    resY = desktopMode.height;
+                    
+                    window.create(sf::VideoMode(resX, resY), "Annihilation", sf::Style::Fullscreen);
+                    fullscreen = true;
+                }
+            
+                windowOpen = true;
+                thread.launch();
             }
         }
     }
